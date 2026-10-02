@@ -205,3 +205,13 @@ def test_request_without_user_header_returns_400(client, upstream):
     response = client.get(RATING_PATH)
 
     assert response.status_code == 400
+
+
+def test_cyrillic_username_is_forwarded(client, upstream):
+    upstream.on("GET", RATING_PATH, {"stars": 75})
+
+    response = client.get(RATING_PATH, headers={"X-User-Name": "Иван Петров".encode()})
+
+    assert response.status_code == 200
+    forwarded = upstream.request("GET", RATING_PATH).headers
+    assert forwarded["X-User-Name"] == "Иван Петров"

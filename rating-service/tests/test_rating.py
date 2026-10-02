@@ -74,3 +74,13 @@ def test_request_without_user_header_returns_400(client):
 
     assert response.status_code == 400
     assert response.json()["errors"][0]["field"] == "header.X-User-Name"
+
+
+def test_cyrillic_username_survives_header_decoding(client):
+    """Заголовок приходит байтами UTF-8, а декодируется стандартом как latin-1."""
+    headers = {"X-User-Name": "Иван Петров".encode()}
+
+    response = client.get(API_PATH, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == {"stars": DEFAULT_STARS}
