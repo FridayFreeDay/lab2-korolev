@@ -71,7 +71,7 @@ async def _request(
     Любая сетевая проблема и любая 5xx превращаются в 503: наружу не должны
     протекать подробности того, какой именно сервис и как именно сломался.
     """
-    headers = {USER_NAME_HEADER: username} if username is not None else None
+    headers = {USER_NAME_HEADER: username.encode()} if username is not None else None
     try:
         response = await get_client().request(
             method, f"{base_url}{path}", params=params, json=json, headers=headers

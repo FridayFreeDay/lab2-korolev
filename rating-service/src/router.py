@@ -11,9 +11,17 @@ USER_NAME_HEADER = "X-User-Name"
 router = APIRouter(prefix=API_PREFIX, tags=["Rating"])
 
 
+def user_name(raw: str = Header(alias=USER_NAME_HEADER)) -> str:
+    """Возвращает имя в UTF-8: заголовки приходят декодированными как latin-1."""
+    try:
+        return raw.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return raw
+
+
 @router.get("", response_model=RatingResponse, summary="Get user rating")
 def get_rating(
-    username: str = Header(alias=USER_NAME_HEADER),
+    username: str = Depends(user_name),
     session: Session = Depends(get_db),
 ) -> RatingResponse:
     return RatingResponse.model_validate(repository.get_or_create_rating(session, username))
@@ -22,7 +30,7 @@ def get_rating(
 @router.patch("", response_model=RatingResponse, summary="Change user rating")
 def update_rating(
     request: UpdateRatingRequest,
-    username: str = Header(alias=USER_NAME_HEADER),
+    username: str = Depends(user_name),
     session: Session = Depends(get_db),
 ) -> RatingResponse:
     return RatingResponse.model_validate(

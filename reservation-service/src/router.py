@@ -19,10 +19,18 @@ USER_NAME_HEADER = "X-User-Name"
 router = APIRouter(prefix=API_PREFIX, tags=["Reservation"])
 
 
+def user_name(raw: str = Header(alias=USER_NAME_HEADER)) -> str:
+    """Возвращает имя в UTF-8: заголовки приходят декодированными как latin-1."""
+    try:
+        return raw.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return raw
+
+
 @router.get("", response_model=list[ReservationResponse])
 def list_reservations(
     status_filter: ReservationStatus | None = Query(None, alias="status"),
-    username: str = Header(alias=USER_NAME_HEADER),
+    username: str = Depends(user_name),
     session: Session = Depends(get_db),
 ) -> list[ReservationResponse]:
     reservations = repository.list_reservations(session, username, status_filter)
@@ -32,7 +40,7 @@ def list_reservations(
 @router.post("", response_model=ReservationResponse)
 def create_reservation(
     request: CreateReservationRequest,
-    username: str = Header(alias=USER_NAME_HEADER),
+    username: str = Depends(user_name),
     session: Session = Depends(get_db),
 ) -> ReservationResponse:
     return ReservationResponse.model_validate(
@@ -51,7 +59,7 @@ def create_reservation(
 def return_reservation(
     reservation_uid: uuid.UUID,
     request: ReturnReservationRequest,
-    username: str = Header(alias=USER_NAME_HEADER),
+    username: str = Depends(user_name),
     session: Session = Depends(get_db),
 ) -> ReservationResponse:
     return ReservationResponse.model_validate(
